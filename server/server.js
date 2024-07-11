@@ -1,9 +1,19 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
+
+// 명령줄 인수에서 Vue 앱 주소 가져오기
+const args = process.argv.slice(2);
+const vueAppAddress = args[0];
+
+if (!vueAppAddress) {
+    console.error('Vue 앱 주소를 입력해주세요.');
+    process.exit(1);
+}
+
 const io = require('socket.io')(http, {
     cors: {
-        origin: "http://localhost:5173", // Vue 앱의 주소
+        origin: vueAppAddress, // 명령줄 인수로 받은 Vue 앱 주소
         methods: ["GET", "POST"]
     }
 });
