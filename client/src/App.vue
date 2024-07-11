@@ -6,14 +6,14 @@
     <div class="container" @contextmenu.prevent>
       <SideComponent
           side="A"
-          :count="countA"
+          :count="counts.A"
           :ratio="ratioA"
           @increment="incrementCount('A')"
           @decrement="decrementCount('A')"
       />
       <SideComponent
           side="B"
-          :count="countB"
+          :count="counts.B"
           :ratio="ratioB"
           @increment="incrementCount('B')"
           @decrement="decrementCount('B')"
@@ -23,19 +23,42 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import {ref, computed, onMounted, onUnmounted} from 'vue'
+import {io} from 'socket.io-client'
 import SideComponent from './components/SideComponent.vue'
 
-const countA = ref(0)
-const countB = ref(0)
+const socket = io('http://localhost:3000')
 
-const total = computed(() => countA.value + countB.value)
-// const ratioA = computed(() => countA.value / total.value || 0.5)
-// const ratioB = computed(() => countB.value / total.value || 0.5)
-const ratioA = computed(() => total.value === 0 ? 0.5 : countA.value / total.value)
-const ratioB = computed(() => total.value === 0 ? 0.5 : countB.value / total.value)
+const counts = ref({ A: 0, B: 0})
+
+// const countA = ref(0)
+// const countB = ref(0)
+
+// const total = computed(() => countA.value + countB.value)
+const total = computed(() => counts.value.A + counts.value.B)
+const ratioA = computed(() => total.value === 0 ? 0.5 : counts.value.A / total.value)
+const ratioB = computed(() => total.value === 0 ? 0.5 : counts.value.B / total.value)
+
+onMounted(() => {
+  socket.on('counts', (newCounts) => {
+    counts.value = newCounts
+  })
+})
+
+onUnmounted(() => {
+  socket.off('counts')
+  socket.disconnect()
+})
 
 const incrementCount = (side) => {
+  socket.emit('increment', side)
+}
+const decrementCount = (side) => {
+  socket.emit('decrement', side)
+}
+
+// Offline 용 코드
+/*const incrementCount = (side) => {
   console.log("좌클릭", side)
   if (side === 'A') {
     countA.value++
@@ -50,7 +73,7 @@ const decrementCount = (side) => {
   } else if (side === 'B' && countB.value > 0) {
     countB.value--
   }
-}
+}*/
 </script>
 
 <style>
